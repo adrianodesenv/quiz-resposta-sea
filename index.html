@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
@@ -13,7 +13,7 @@
         --border-soft: #d7dbe6;
         --input-border: #7ec8e8;
         --placeholder: #79bfe0;
-        --btn: #254eca;
+        --btn: #0472b8;
         --btn-hover: #1d3faa;
         --count-bg: #000b3d;
         --banner-radius: clamp(14px, 3vw, 22px);
@@ -180,6 +180,20 @@
         width: 100%;
       }
 
+      .codigo-resposta {
+        text-align: center;
+        margin: 0 auto 0.65rem;
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: var(--muted);
+        letter-spacing: 0.02em;
+      }
+
+      .codigo-resposta strong {
+        color: var(--heading);
+        font-weight: 800;
+      }
+
       .pergunta {
         text-align: center;
         margin: 0 auto clamp(1.75rem, 5vw, 2.25rem);
@@ -290,36 +304,54 @@
     <div class="shell">
       <main>
         <div class="sea-banner" role="banner">
-          <h1 class="sea-title">SEA</h1>
-          <p class="sea-sub">Scientific Exchange in Amyloidosis</p>
+          <!-- <h1 class="sea-title">SEA</h1>
+          <p class="sea-sub">Scientific Exchange in Amyloidosis</p> -->
         </div>
 
         <section id="telaCodigo" aria-label="Informar código">
           <p class="instrucao">Digite o código para visualizar as respostas.</p>
           <div class="campo-stack">
             <label class="sr-only" for="codigo">Inserir código</label>
-            <input id="codigo" type="text" inputmode="numeric" autocomplete="off" placeholder="Inserir código" />
-            <button type="button" class="acessar" id="btnAcessar">Acessar</button>
+            <input
+              id="codigo"
+              type="text"
+              inputmode="numeric"
+              autocomplete="off"
+              placeholder="Inserir código"
+            />
+            <button type="button" class="acessar" id="btnAcessar">
+              Acessar
+            </button>
           </div>
           <p class="status" id="status" aria-live="polite"></p>
         </section>
 
         <section id="telaResultados" aria-label="Resultados" hidden>
+          <p class="codigo-resposta" id="textoCodigo"></p>
           <div class="pergunta" id="textoPergunta"></div>
           <div class="grid-respostas" id="gridRespostas"></div>
           <p class="status" id="statusResultado" aria-live="polite"></p>
-          <button type="button" class="link-voltar" id="btnVoltar">Digite outro código</button>
+          <button type="button" class="link-voltar" id="btnVoltar">
+            Digite outro código
+          </button>
         </section>
       </main>
 
       <footer class="footer-logo">
-        <img src="assets/alnylam-logo.png" alt="Alnylam" width="220" height="52" />
+        <img
+          src="assets/alnylam-logo.png"
+          alt="Alnylam"
+          width="220"
+          height="52"
+        />
       </footer>
     </div>
 
     <script>
-      const API_QUIZZES = "https://eventos-info.com.br/api/quizzes?pagination[pageSize]=100";
-      const API_RESPOSTAS = "https://eventos-info.com.br/api/quiz-respostas?pagination[pageSize]=100";
+      const API_QUIZZES =
+        "https://eventos-info.com.br/api/quizzes?pagination[pageSize]=100";
+      const API_RESPOSTAS =
+        "https://eventos-info.com.br/api/quiz-respostas?pagination[pageSize]=100";
 
       const $ = (id) => document.getElementById(id);
 
@@ -352,7 +384,8 @@
 
       async function fetchJson(url) {
         const res = await fetch(url);
-        if (!res.ok) throw new Error("Falha ao carregar dados (" + res.status + ").");
+        if (!res.ok)
+          throw new Error("Falha ao carregar dados (" + res.status + ").");
         return res.json();
       }
 
@@ -405,7 +438,11 @@
             list.push(p);
           } else {
             const letter = String.fromCharCode(65 + i);
-            list.push({ letter, text: String(arr[i]).trim(), full: String(arr[i]) });
+            list.push({
+              letter,
+              text: String(arr[i]).trim(),
+              full: String(arr[i]),
+            });
           }
         }
         return list;
@@ -418,7 +455,9 @@
       }
 
       function letraOuNull(s) {
-        const m = String(s || "").trim().match(/^([A-Za-z])/);
+        const m = String(s || "")
+          .trim()
+          .match(/^([A-Za-z])/);
         return m ? m[1].toUpperCase() : null;
       }
 
@@ -447,9 +486,11 @@
           }
           if (!matched) {
             const L = letraOuNull(esc);
-            if (L && out[L] !== undefined) matched = opcoes.find((o) => o.letter === L) || null;
+            if (L && out[L] !== undefined)
+              matched = opcoes.find((o) => o.letter === L) || null;
           }
-          if (matched && out[matched.letter] !== undefined) out[matched.letter] += 1;
+          if (matched && out[matched.letter] !== undefined)
+            out[matched.letter] += 1;
         }
 
         return out;
@@ -460,7 +501,8 @@
         const c = String(codigo || "").trim();
         for (const row of quizzes) {
           const attrs = row.attributes || {};
-          if (attrs.codigo != null && String(attrs.codigo).trim() === c) return row;
+          if (attrs.codigo != null && String(attrs.codigo).trim() === c)
+            return row;
         }
         return null;
       }
@@ -536,12 +578,16 @@
         status.textContent = "Carregando…";
 
         try {
-          const [quizzes, respostasRows] = await Promise.all([loadQuizzes(), loadRespostas()]);
+          const [quizzes, respostasRows] = await Promise.all([
+            loadQuizzes(),
+            loadRespostas(),
+          ]);
 
           const quizRow = encontrarQuizPorCodigo(quizzes, codigo);
           if (!quizRow) {
             status.className = "status error";
-            status.textContent = "Não encontramos um quiz com o código informado.";
+            status.textContent =
+              "Não encontramos um quiz com o código informado.";
             return;
           }
 
@@ -549,13 +595,16 @@
           /** @type {string} */
           const perguntaTexto =
             (attrs.pergunta && String(attrs.pergunta).trim()) ||
-            (attrs.opcao_resposta && attrs.opcao_resposta.pergunta && String(attrs.opcao_resposta.pergunta).trim()) ||
+            (attrs.opcao_resposta &&
+              attrs.opcao_resposta.pergunta &&
+              String(attrs.opcao_resposta.pergunta).trim()) ||
             "";
 
           const opcoes = opcoesDoQuiz(attrs);
           if (!opcoes.length) {
             status.className = "status error";
-            status.textContent = "Este quiz não possui alternativas em opcao_resposta.resposta.";
+            status.textContent =
+              "Este quiz não possui alternativas em opcao_resposta.resposta.";
             return;
           }
 
@@ -565,6 +614,9 @@
           $("codigo").value = codigo;
           setCodigoNaUrl(codigo);
           status.textContent = "";
+
+          $("textoCodigo").innerHTML =
+            "Código: <strong>" + escapeHtml(codigo) + "</strong>";
 
           $("textoPergunta").textContent =
             perguntaTexto ||
@@ -583,7 +635,9 @@
         }
       }
 
-      $("btnAcessar").addEventListener("click", () => carregar($("codigo").value));
+      $("btnAcessar").addEventListener("click", () =>
+        carregar($("codigo").value),
+      );
       $("codigo").addEventListener("keydown", (ev) => {
         if (ev.key === "Enter") carregar($("codigo").value);
       });
