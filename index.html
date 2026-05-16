@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SEA — Respostas do quiz</title>
+    <link rel="preconnect" href="https://eventos-info.com.br" />
+    <style>
+      :root {
+        --page: #ffffff;
+        --heading: #000b3d;
+        --muted: #5c6780;
+        --border-soft: #d7dbe6;
+        --input-border: #7ec8e8;
+        --placeholder: #79bfe0;
+        --btn: #254eca;
+        --btn-hover: #1d3faa;
+        --count-bg: #000b3d;
+        --banner-radius: clamp(14px, 3vw, 22px);
+        --sea-navy: #000040;
+        --option-radius: clamp(10px, 2vw, 14px);
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--page);
+        color: var(--heading);
+        font-size: 16px;
+        line-height: 1.45;
+      }
+
+      .shell {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: clamp(1.75rem, 6vw, 3.5rem) clamp(1.25rem, 5vw, 2rem) 2.5rem;
+      }
+
+      .shell main {
+        width: min(760px, 100%);
+      }
+
+      .sea-banner {
+        position: relative;
+        overflow: hidden;
+        border-radius: var(--banner-radius);
+        background-color: var(--sea-navy);
+        background-image: url("assets/sea-banner-bg.png");
+        background-size: cover;
+        background-position: center;
+        aspect-ratio: 16 / 4.35;
+        min-height: clamp(132px, 28vw, 180px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 1rem 1.25rem;
+        margin-bottom: clamp(2rem, 8vw, 3.75rem);
+        box-shadow: 0 10px 30px rgba(0, 11, 61, 0.08);
+      }
+
+      .sea-title {
+        margin: 0;
+        font-size: clamp(2.75rem, 12vw, 4.85rem);
+        font-weight: 900;
+        letter-spacing: 0.02em;
+        line-height: 1;
+        color: transparent;
+        background-image: linear-gradient(
+          175deg,
+          #ffffff 0%,
+          #ffffff 38%,
+          #9fdcf5 52%,
+          #6ec6e8 58%,
+          #ffffff 65%,
+          #cdefff 85%
+        );
+        -webkit-background-clip: text;
+        background-clip: text;
+        text-shadow: 0 12px 40px rgba(0, 180, 255, 0.12);
+      }
+
+      .sea-sub {
+        margin: 0.45rem 0 0;
+        font-size: clamp(0.9rem, 2.8vw, 1.05rem);
+        font-weight: 500;
+        color: #ffffff;
+        letter-spacing: 0.01em;
+        max-width: 36ch;
+      }
+
+      .instrucao {
+        text-align: center;
+        margin: 0 0 0.85rem;
+        font-size: 0.93rem;
+        color: var(--muted);
+      }
+
+      .campo-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+        align-items: center;
+      }
+
+      .campo-stack input[type="text"] {
+        width: min(460px, 100%);
+        padding: 0.78rem 1rem;
+        border-radius: clamp(10px, 2vw, 13px);
+        border: 1.5px solid var(--input-border);
+        font-size: 1rem;
+        color: var(--heading);
+      }
+
+      .campo-stack input[type="text"]::placeholder {
+        color: var(--placeholder);
+      }
+
+      .campo-stack input[type="text"]:focus {
+        outline: none;
+        border-color: #52b8e8;
+        box-shadow: 0 0 0 3px rgba(81, 186, 232, 0.2);
+      }
+
+      button.acessar {
+        width: min(260px, 100%);
+        border: none;
+        border-radius: clamp(10px, 2vw, 13px);
+        padding: 0.9rem 1.25rem;
+        font-weight: 700;
+        font-size: 0.92rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        cursor: pointer;
+        background: var(--btn);
+        color: #ffffff;
+      }
+
+      button.acessar:hover {
+        background: var(--btn-hover);
+      }
+
+      button.acessar:active {
+        transform: translateY(1px);
+      }
+
+      .status {
+        text-align: center;
+        min-height: 1.4em;
+        margin: 0.85rem 0 0;
+        font-size: 0.9rem;
+        color: var(--muted);
+      }
+
+      .status.error {
+        color: #c62828;
+      }
+
+      .link-voltar {
+        display: block;
+        text-align: center;
+        margin-top: 1rem;
+        font-size: 0.88rem;
+        color: var(--btn);
+        background: none;
+        border: none;
+        cursor: pointer;
+        text-decoration: underline;
+        padding: 0;
+        width: 100%;
+      }
+
+      .pergunta {
+        text-align: center;
+        margin: 0 auto clamp(1.75rem, 5vw, 2.25rem);
+        font-size: clamp(0.98rem, 2.4vw, 1.12rem);
+        max-width: 52ch;
+        color: #1a1f33;
+      }
+
+      .grid-respostas {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) clamp(110px, 28vw, 152px);
+        column-gap: clamp(0.75rem, 3vw, 1.5rem);
+        row-gap: clamp(0.65rem, 2vw, 0.85rem);
+        align-items: stretch;
+        width: 100%;
+      }
+
+      .grid-respostas .head-spacer {
+        grid-column: 1;
+        grid-row: 1;
+        min-height: 1.25rem;
+      }
+
+      .qtd-heading {
+        grid-column: 2;
+        grid-row: 1;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--heading);
+        text-align: right;
+        align-self: end;
+        padding-bottom: 0.15rem;
+      }
+
+      .opt-box {
+        display: flex;
+        align-items: stretch;
+        border: 1px solid var(--border-soft);
+        border-radius: var(--option-radius);
+        background: #fff;
+        min-height: 3.25rem;
+        overflow: hidden;
+      }
+
+      .opt-letter {
+        flex: 0 0 2.6rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 1.05rem;
+        text-transform: lowercase;
+        color: var(--heading);
+        border-right: 1px solid var(--border-soft);
+      }
+
+      .opt-text {
+        flex: 1;
+        padding: 0.65rem 0.85rem;
+        font-size: 0.88rem;
+        color: #2a3148;
+        display: flex;
+        align-items: center;
+      }
+
+      .count-box {
+        border-radius: var(--option-radius);
+        background: var(--count-bg);
+        color: #fff;
+        font-weight: 700;
+        font-size: clamp(1.35rem, 4.5vw, 1.75rem);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 3.25rem;
+      }
+
+      .footer-logo {
+        margin-top: auto;
+        padding-top: clamp(2.5rem, 10vw, 4rem);
+        display: flex;
+        justify-content: center;
+      }
+
+      .footer-logo img {
+        height: clamp(36px, 9vw, 48px);
+        width: auto;
+        display: block;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        border: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <main>
+        <div class="sea-banner" role="banner">
+          <h1 class="sea-title">SEA</h1>
+          <p class="sea-sub">Scientific Exchange in Amyloidosis</p>
+        </div>
+
+        <section id="telaCodigo" aria-label="Informar código">
+          <p class="instrucao">Digite o código para visualizar as respostas.</p>
+          <div class="campo-stack">
+            <label class="sr-only" for="codigo">Inserir código</label>
+            <input id="codigo" type="text" inputmode="numeric" autocomplete="off" placeholder="Inserir código" />
+            <button type="button" class="acessar" id="btnAcessar">Acessar</button>
+          </div>
+          <p class="status" id="status" aria-live="polite"></p>
+        </section>
+
+        <section id="telaResultados" aria-label="Resultados" hidden>
+          <div class="pergunta" id="textoPergunta"></div>
+          <div class="grid-respostas" id="gridRespostas"></div>
+          <p class="status" id="statusResultado" aria-live="polite"></p>
+          <button type="button" class="link-voltar" id="btnVoltar">Digite outro código</button>
+        </section>
+      </main>
+
+      <footer class="footer-logo">
+        <img src="assets/alnylam-logo.png" alt="Alnylam" width="220" height="52" />
+      </footer>
+    </div>
+
+    <script>
+      const API_QUIZZES = "https://eventos-info.com.br/api/quizzes?pagination[pageSize]=100";
+      const API_RESPOSTAS = "https://eventos-info.com.br/api/quiz-respostas?pagination[pageSize]=100";
+
+      const $ = (id) => document.getElementById(id);
+
+      /** @typedef {{ letter: string, text: string, full: string }} QuizOption */
+
+      function codigoDaUrl() {
+        const p = new URLSearchParams(window.location.search);
+        return (
+          p.get("codigo") ||
+          p.get("codigoQuiz") ||
+          p.get("codigoQuize") ||
+          ""
+        ).trim();
+      }
+
+      function setCodigoNaUrl(val) {
+        const url = new URL(window.location.href);
+        if (val) {
+          url.searchParams.set("codigo", val);
+        } else {
+          url.searchParams.delete("codigo");
+          url.searchParams.delete("codigoQuiz");
+          url.searchParams.delete("codigoQuize");
+        }
+        history.replaceState(null, "", url);
+      }
+
+      let cacheQuiz = null;
+      let cacheRespostas = null;
+
+      async function fetchJson(url) {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Falha ao carregar dados (" + res.status + ").");
+        return res.json();
+      }
+
+      async function loadQuizzes() {
+        if (cacheQuiz) return cacheQuiz;
+        const json = await fetchJson(API_QUIZZES);
+        cacheQuiz = Array.isArray(json.data) ? json.data : [];
+        return cacheQuiz;
+      }
+
+      async function loadRespostas() {
+        if (cacheRespostas) return cacheRespostas;
+        const json = await fetchJson(API_RESPOSTAS);
+        const rows = Array.isArray(json.data) ? json.data : [];
+        cacheRespostas = rows.map((row) => {
+          const a = row.attributes || {};
+          return {
+            id: row.id,
+            codigoQuiz: a.codigoQuiz != null ? String(a.codigoQuiz).trim() : "",
+            resposta_escolhida: a.resposta_escolhida,
+          };
+        });
+        return cacheRespostas;
+      }
+
+      /**
+       * @param {unknown} opcaoLinha string tipo "A - texto"
+       * @returns {QuizOption | null}
+       */
+      function parseLinhaOpcao(opcaoLinha) {
+        const s = String(opcaoLinha || "").trim();
+        const m = s.match(/^([A-Za-z])\s*-\s*(.*)$/);
+        if (!m) return null;
+        return {
+          letter: m[1].toUpperCase(),
+          text: m[2].trim() || "—",
+          full: s,
+        };
+      }
+
+      /** @returns {QuizOption[]} */
+      function opcoesDoQuiz(quizAttrs) {
+        const or = quizAttrs && quizAttrs.opcao_resposta;
+        const arr = or && Array.isArray(or.resposta) ? or.resposta : [];
+        /** @type {QuizOption[]} */
+        const list = [];
+        for (let i = 0; i < arr.length; i++) {
+          const p = parseLinhaOpcao(arr[i]);
+          if (p) {
+            list.push(p);
+          } else {
+            const letter = String.fromCharCode(65 + i);
+            list.push({ letter, text: String(arr[i]).trim(), full: String(arr[i]) });
+          }
+        }
+        return list;
+      }
+
+      function textoPrimeiraEscolhida(val) {
+        if (val == null) return "";
+        const s = Array.isArray(val) ? val[0] : val;
+        return String(s || "").trim();
+      }
+
+      function letraOuNull(s) {
+        const m = String(s || "").trim().match(/^([A-Za-z])/);
+        return m ? m[1].toUpperCase() : null;
+      }
+
+      /**
+       * Para cada escolha, tenta igualar texto completo a uma opcao.full ou letra inicial.
+       * @param {QuizOption[]} opcoes
+       * @param {{ resposta_escolhida: unknown }[]} linhas
+       */
+      function contarPorOpcoes(opcoes, linhas) {
+        /** @type {Record<string, number>} */
+        const out = {};
+        for (const o of opcoes) out[o.letter] = 0;
+
+        for (const linha of linhas) {
+          const esc = textoPrimeiraEscolhida(linha.resposta_escolhida);
+          if (!esc) continue;
+          const low = esc.toLowerCase();
+
+          /** @type {QuizOption | null} */
+          let matched = null;
+          for (const o of opcoes) {
+            if (o.full.trim().toLowerCase() === low) {
+              matched = o;
+              break;
+            }
+          }
+          if (!matched) {
+            const L = letraOuNull(esc);
+            if (L && out[L] !== undefined) matched = opcoes.find((o) => o.letter === L) || null;
+          }
+          if (matched && out[matched.letter] !== undefined) out[matched.letter] += 1;
+        }
+
+        return out;
+      }
+
+      /** @returns {unknown | null} */
+      function encontrarQuizPorCodigo(quizzes, codigo) {
+        const c = String(codigo || "").trim();
+        for (const row of quizzes) {
+          const attrs = row.attributes || {};
+          if (attrs.codigo != null && String(attrs.codigo).trim() === c) return row;
+        }
+        return null;
+      }
+
+      function filtrarRespostasCodigo(rows, codigo) {
+        const c = String(codigo || "").trim();
+        return rows.filter((r) => r.codigoQuiz === c);
+      }
+
+      function mostrarCodigo(show) {
+        $("telaCodigo").hidden = !show;
+        $("telaResultados").hidden = show;
+      }
+
+      /** @param {QuizOption[]} opcoes */
+      /** @param {Record<string, number>} contagem */
+      function renderGrid(opcoes, contagem) {
+        const grid = $("gridRespostas");
+        grid.innerHTML = "";
+
+        const spacer = document.createElement("div");
+        spacer.className = "head-spacer";
+        grid.appendChild(spacer);
+
+        const h = document.createElement("div");
+        h.className = "qtd-heading";
+        h.textContent = "Qtd. de respostas";
+        grid.appendChild(h);
+
+        for (const o of opcoes) {
+          const rowLetter = document.createElement("div");
+          rowLetter.className = "opt-box";
+          rowLetter.innerHTML =
+            '<span class="opt-letter">' +
+            o.letter.toLowerCase() +
+            "</span>" +
+            '<span class="opt-text">' +
+            escapeHtml(o.text) +
+            "</span>";
+          grid.appendChild(rowLetter);
+
+          const count = document.createElement("div");
+          count.className = "count-box";
+          count.textContent = String(contagem[o.letter] ?? 0);
+          grid.appendChild(count);
+        }
+      }
+
+      function escapeHtml(s) {
+        return String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      async function carregar(codigoRaw) {
+        const status = $("status");
+        const statusR = $("statusResultado");
+
+        status.className = "status";
+        status.textContent = "";
+        statusR.textContent = "";
+
+        const codigo = String(codigoRaw || "").trim();
+        if (!codigo) {
+          status.className = "status error";
+          status.textContent = "Informe um código válido.";
+          return;
+        }
+
+        status.className = "status";
+        status.textContent = "Carregando…";
+
+        try {
+          const [quizzes, respostasRows] = await Promise.all([loadQuizzes(), loadRespostas()]);
+
+          const quizRow = encontrarQuizPorCodigo(quizzes, codigo);
+          if (!quizRow) {
+            status.className = "status error";
+            status.textContent = "Não encontramos um quiz com o código informado.";
+            return;
+          }
+
+          const attrs = quizRow.attributes || {};
+          /** @type {string} */
+          const perguntaTexto =
+            (attrs.pergunta && String(attrs.pergunta).trim()) ||
+            (attrs.opcao_resposta && attrs.opcao_resposta.pergunta && String(attrs.opcao_resposta.pergunta).trim()) ||
+            "";
+
+          const opcoes = opcoesDoQuiz(attrs);
+          if (!opcoes.length) {
+            status.className = "status error";
+            status.textContent = "Este quiz não possui alternativas em opcao_resposta.resposta.";
+            return;
+          }
+
+          const linhasResp = filtrarRespostasCodigo(respostasRows, codigo);
+          const contagem = contarPorOpcoes(opcoes, linhasResp);
+
+          $("codigo").value = codigo;
+          setCodigoNaUrl(codigo);
+          status.textContent = "";
+
+          $("textoPergunta").textContent =
+            perguntaTexto ||
+            "Pergunta do quiz não disponível. Mostrando apenas a distribuição das respostas.";
+
+          renderGrid(opcoes, contagem);
+          $("statusResultado").textContent =
+            linhasResp.length === 0
+              ? "Nenhuma resposta registrada para este código ainda."
+              : "";
+
+          mostrarCodigo(false);
+        } catch (e) {
+          status.className = "status error";
+          status.textContent = e.message || "Erro ao carregar.";
+        }
+      }
+
+      $("btnAcessar").addEventListener("click", () => carregar($("codigo").value));
+      $("codigo").addEventListener("keydown", (ev) => {
+        if (ev.key === "Enter") carregar($("codigo").value);
+      });
+      $("btnVoltar").addEventListener("click", () => {
+        setCodigoNaUrl("");
+        $("status").textContent = "";
+        $("status").className = "status";
+        mostrarCodigo(true);
+      });
+
+      window.addEventListener("DOMContentLoaded", () => {
+        const q = codigoDaUrl();
+        if (q) {
+          $("codigo").value = q;
+          carregar(q);
+        }
+      });
+    </script>
+  </body>
+</html>
