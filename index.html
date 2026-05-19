@@ -167,6 +167,50 @@
         color: #c62828;
       }
 
+      .codigo-linha {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin: 0 auto 0.65rem;
+        width: 100%;
+      }
+
+      .acoes-resultado {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        margin-top: clamp(1.25rem, 4vw, 1.75rem);
+      }
+
+      button.btn-atualizar {
+        border: 1.5px solid var(--btn);
+        border-radius: clamp(10px, 2vw, 13px);
+        padding: 0.55rem 1.1rem;
+        font-size: 0.88rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        cursor: pointer;
+        background: #fff;
+        color: var(--btn);
+      }
+
+      button.btn-atualizar:hover {
+        background: rgba(4, 114, 184, 0.06);
+      }
+
+      button.btn-atualizar:disabled {
+        opacity: 0.55;
+        cursor: wait;
+      }
+
+      .ultima-atualizacao {
+        font-size: 0.82rem;
+        color: var(--muted);
+      }
+
       .link-voltar {
         display: block;
         text-align: center;
@@ -182,8 +226,8 @@
       }
 
       .codigo-resposta {
-        text-align: center;
-        margin: 0 auto 0.65rem;
+        margin: 0;
+        text-align: left;
         font-size: 0.88rem;
         font-weight: 700;
         color: var(--muted);
@@ -328,10 +372,18 @@
         </section>
 
         <section id="telaResultados" aria-label="Resultados" hidden>
-          <p class="codigo-resposta" id="textoCodigo"></p>
+          <div class="codigo-linha">
+            <p class="codigo-resposta" id="textoCodigo"></p>
+            <button type="button" class="btn-atualizar" id="btnAtualizar">
+              Atualizar
+            </button>
+          </div>
           <div class="pergunta" id="textoPergunta"></div>
           <div class="grid-respostas" id="gridRespostas"></div>
           <p class="status" id="statusResultado" aria-live="polite"></p>
+          <div class="acoes-resultado">
+            <span class="ultima-atualizacao" id="ultimaAtualizacao"></span>
+          </div>
           <button type="button" class="link-voltar" id="btnVoltar">
             Digite outro código
           </button>
@@ -380,8 +432,13 @@
         history.replaceState(null, "", url);
       }
 
+      const INTERVALO_ATUALIZACAO_MS = 30_000;
+
       let cacheQuiz = null;
       let cacheRespostas = null;
+      let codigoAtual = null;
+      let refreshTimer = null;
+      let carregando = false;
 
       async function fetchJson(url) {
         const res = await fetch(url);
@@ -390,14 +447,16 @@
         return res.json();
       }
 
-      async function loadQuizzes() {
+      async function loadQuizzes(forceRefresh = false) {
+        if (forceRefresh) cacheQuiz = null;
         if (cacheQuiz) return cacheQuiz;
         const json = await fetchJson(API_QUIZZES);
         cacheQuiz = Array.isArray(json.data) ? json.data : [];
         return cacheQuiz;
       }
 
-      async function loadRespostas() {
+      async function loadRespostas(forceRefresh = false) {
+        if (forceRefresh) cacheRespostas = null;
         if (cacheRespostas) return cacheRespostas;
         const json = await fetchJson(API_RESPOSTAS);
         const rows = Array.isArray(json.data) ? json.data : [];
@@ -410,6 +469,31 @@
           };
         });
         return cacheRespostas;
+      }
+
+      function pararAutoRefresh() {
+        if (refreshTimer) {
+          clearInterval(refreshTimer);
+          refreshTimer = null;
+        }
+      }
+
+      function iniciarAutoRefresh() {
+        pararAutoRefresh();
+        refreshTimer = setInterval(() => {
+          if (codigoAtual) carregar(codigoAtual, { silent: true, forceRefresh: true });
+        }, INTERVALO_ATUALIZACAO_MS);
+      }
+
+      function marcarUltimaAtualizacao() {
+        const el = $("ultimaAtualizacao");
+        const agora = new Date();
+        const hora = agora.toLocaleTimeString("pt-BR", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        });
+        el.textContent = "Atualizado às " + hora + " · próxima em 30 s";
       }
 
       /**
@@ -463,7 +547,51 @@
       }
 
       /**
-       * Para cada escolha, tenta igualar texto completo a uma opcao.full ou letra inicial.
+       * Extrai letra e texto de "B - Resposta 2" (ou só letra/texto solto).
+       * @returns {{ letter: string | null, text: string }}
+       */
+      function partesDaEscolha(esc) {
+        const s = String(esc || "").trim();
+        const m = s.match(/^([A-Za-z])\s*-\s*(.*)$/);
+        if (m) {
+          return {
+            letter: m[1].toUpperCase(),
+            text: m[2].trim().toLowerCase(),
+          };
+        }
+        return { letter: letraOuNull(s), text: s.toLowerCase() };
+      }
+
+      /**
+       * @param {QuizOption[]} opcoes
+       * @param {string} esc
+       * @returns {QuizOption | null}
+       */
+      function encontrarOpcaoEscolhida(opcoes, esc) {
+        const low = esc.trim().toLowerCase();
+        const partes = partesDaEscolha(esc);
+
+        for (const o of opcoes) {
+          if (o.full.trim().toLowerCase() === low) return o;
+        }
+
+        if (partes.text) {
+          const porTexto = opcoes.filter(
+            (o) => o.text.trim().toLowerCase() === partes.text,
+          );
+          if (porTexto.length === 1) return porTexto[0];
+        }
+
+        if (partes.letter) {
+          const porLetra = opcoes.find((o) => o.letter === partes.letter);
+          if (porLetra) return porLetra;
+        }
+
+        return null;
+      }
+
+      /**
+       * Conta por opção: texto completo, depois texto da alternativa, por último letra.
        * @param {QuizOption[]} opcoes
        * @param {{ resposta_escolhida: unknown }[]} linhas
        */
@@ -475,21 +603,8 @@
         for (const linha of linhas) {
           const esc = textoPrimeiraEscolhida(linha.resposta_escolhida);
           if (!esc) continue;
-          const low = esc.toLowerCase();
 
-          /** @type {QuizOption | null} */
-          let matched = null;
-          for (const o of opcoes) {
-            if (o.full.trim().toLowerCase() === low) {
-              matched = o;
-              break;
-            }
-          }
-          if (!matched) {
-            const L = letraOuNull(esc);
-            if (L && out[L] !== undefined)
-              matched = opcoes.find((o) => o.letter === L) || null;
-          }
+          const matched = encontrarOpcaoEscolhida(opcoes, esc);
           if (matched && out[matched.letter] !== undefined)
             out[matched.letter] += 1;
         }
@@ -560,35 +675,54 @@
           .replace(/"/g, "&quot;");
       }
 
-      async function carregar(codigoRaw) {
+      async function carregar(codigoRaw, opts = {}) {
+        const { silent = false, forceRefresh = false } = opts;
         const status = $("status");
         const statusR = $("statusResultado");
-
-        status.className = "status";
-        status.textContent = "";
-        statusR.textContent = "";
+        const btnAtualizar = $("btnAtualizar");
 
         const codigo = String(codigoRaw || "").trim();
         if (!codigo) {
-          status.className = "status error";
-          status.textContent = "Informe um código válido.";
+          if (!silent) {
+            status.className = "status error";
+            status.textContent = "Informe um código válido.";
+          }
           return;
         }
 
-        status.className = "status";
-        status.textContent = "Carregando…";
+        if (carregando) return;
+        carregando = true;
+        btnAtualizar.disabled = true;
+
+        if (!silent) {
+          status.className = "status";
+          status.textContent = "";
+          statusR.textContent = "";
+          status.className = "status";
+          status.textContent = "Carregando…";
+        } else {
+          statusR.className = "status";
+          statusR.textContent = "Atualizando…";
+        }
 
         try {
           const [quizzes, respostasRows] = await Promise.all([
-            loadQuizzes(),
-            loadRespostas(),
+            loadQuizzes(forceRefresh),
+            loadRespostas(forceRefresh),
           ]);
 
           const quizRow = encontrarQuizPorCodigo(quizzes, codigo);
           if (!quizRow) {
-            status.className = "status error";
-            status.textContent =
-              "Não encontramos um quiz com o código informado.";
+            pararAutoRefresh();
+            codigoAtual = null;
+            if (!silent) {
+              status.className = "status error";
+              status.textContent =
+                "Não encontramos um quiz com o código informado.";
+            } else {
+              statusR.className = "status error";
+              statusR.textContent = "Quiz não encontrado ao atualizar.";
+            }
             return;
           }
 
@@ -603,18 +737,26 @@
 
           const opcoes = opcoesDoQuiz(attrs);
           if (!opcoes.length) {
-            status.className = "status error";
-            status.textContent =
-              "Este quiz não possui alternativas em opcao_resposta.resposta.";
+            pararAutoRefresh();
+            codigoAtual = null;
+            if (!silent) {
+              status.className = "status error";
+              status.textContent =
+                "Este quiz não possui alternativas em opcao_resposta.resposta.";
+            } else {
+              statusR.className = "status error";
+              statusR.textContent = "Alternativas indisponíveis ao atualizar.";
+            }
             return;
           }
 
           const linhasResp = filtrarRespostasCodigo(respostasRows, codigo);
           const contagem = contarPorOpcoes(opcoes, linhasResp);
 
+          codigoAtual = codigo;
           $("codigo").value = codigo;
           setCodigoNaUrl(codigo);
-          status.textContent = "";
+          if (!silent) status.textContent = "";
 
           $("textoCodigo").innerHTML =
             "Código: <strong>" + escapeHtml(codigo) + "</strong>";
@@ -624,15 +766,26 @@
             "Pergunta do quiz não disponível. Mostrando apenas a distribuição das respostas.";
 
           renderGrid(opcoes, contagem);
-          $("statusResultado").textContent =
+          statusR.className = "status";
+          statusR.textContent =
             linhasResp.length === 0
               ? "Nenhuma resposta registrada para este código ainda."
               : "";
 
           mostrarCodigo(false);
+          marcarUltimaAtualizacao();
+          iniciarAutoRefresh();
         } catch (e) {
-          status.className = "status error";
-          status.textContent = e.message || "Erro ao carregar.";
+          if (!silent) {
+            status.className = "status error";
+            status.textContent = e.message || "Erro ao carregar.";
+          } else {
+            statusR.className = "status error";
+            statusR.textContent = e.message || "Erro ao atualizar.";
+          }
+        } finally {
+          carregando = false;
+          btnAtualizar.disabled = false;
         }
       }
 
@@ -642,7 +795,13 @@
       $("codigo").addEventListener("keydown", (ev) => {
         if (ev.key === "Enter") carregar($("codigo").value);
       });
+      $("btnAtualizar").addEventListener("click", () => {
+        if (codigoAtual) carregar(codigoAtual, { silent: true, forceRefresh: true });
+      });
       $("btnVoltar").addEventListener("click", () => {
+        pararAutoRefresh();
+        codigoAtual = null;
+        $("ultimaAtualizacao").textContent = "";
         setCodigoNaUrl("");
         $("status").textContent = "";
         $("status").className = "status";
