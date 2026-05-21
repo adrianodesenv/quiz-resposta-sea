@@ -481,7 +481,8 @@
       function iniciarAutoRefresh() {
         pararAutoRefresh();
         refreshTimer = setInterval(() => {
-          if (codigoAtual) carregar(codigoAtual, { silent: true, forceRefresh: true });
+          if (codigoAtual)
+            carregar(codigoAtual, { silent: true, forceRefresh: true });
         }, INTERVALO_ATUALIZACAO_MS);
       }
 
@@ -729,10 +730,10 @@
           const attrs = quizRow.attributes || {};
           /** @type {string} */
           const perguntaTexto =
-            (attrs.pergunta && String(attrs.pergunta).trim()) ||
             (attrs.opcao_resposta &&
               attrs.opcao_resposta.pergunta &&
               String(attrs.opcao_resposta.pergunta).trim()) ||
+            (attrs.pergunta && String(attrs.pergunta).trim()) ||
             "";
 
           const opcoes = opcoesDoQuiz(attrs);
@@ -796,7 +797,8 @@
         if (ev.key === "Enter") carregar($("codigo").value);
       });
       $("btnAtualizar").addEventListener("click", () => {
-        if (codigoAtual) carregar(codigoAtual, { silent: true, forceRefresh: true });
+        if (codigoAtual)
+          carregar(codigoAtual, { silent: true, forceRefresh: true });
       });
       $("btnVoltar").addEventListener("click", () => {
         pararAutoRefresh();
