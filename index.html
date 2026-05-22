@@ -348,11 +348,6 @@
   <body>
     <div class="shell">
       <main>
-        <div class="sea-banner" role="banner">
-          <!-- <h1 class="sea-title">SEA</h1>
-          <p class="sea-sub">Scientific Exchange in Amyloidosis</p> -->
-        </div>
-
         <section id="telaCodigo" aria-label="Informar código">
           <p class="instrucao">Digite o código para visualizar as respostas.</p>
           <div class="campo-stack">
@@ -390,14 +385,14 @@
         </section>
       </main>
 
-      <footer class="footer-logo">
+      <!-- <footer class="footer-logo">
         <img
           src="assets/alnylam-logo.svg"
           alt="Alnylam"
           width="220"
           height="61"
         />
-      </footer>
+      </footer> -->
     </div>
 
     <script>
@@ -432,7 +427,7 @@
         history.replaceState(null, "", url);
       }
 
-      const INTERVALO_ATUALIZACAO_MS = 30_000;
+      const INTERVALO_ATUALIZACAO_MS = 2_000;
 
       let cacheQuiz = null;
       let cacheRespostas = null;
@@ -494,7 +489,7 @@
           minute: "2-digit",
           second: "2-digit",
         });
-        el.textContent = "Atualizado às " + hora + " · próxima em 30 s";
+        el.textContent = "Atualizado às " + hora + " · próxima em 2 s";
       }
 
       /**
