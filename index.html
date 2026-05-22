@@ -181,7 +181,7 @@
         flex-wrap: wrap;
         align-items: center;
         justify-content: center;
-        margin-top: clamp(1.25rem, 4vw, 1.75rem);
+        margin-top: clamp(4rem, 4vw, 1.75rem);
       }
 
       button.btn-atualizar {
@@ -376,12 +376,14 @@
           <div class="pergunta" id="textoPergunta"></div>
           <div class="grid-respostas" id="gridRespostas"></div>
           <p class="status" id="statusResultado" aria-live="polite"></p>
-          <div class="acoes-resultado">
-            <span class="ultima-atualizacao" id="ultimaAtualizacao"></span>
-          </div>
+
           <button type="button" class="link-voltar" id="btnVoltar">
             Digite outro código
           </button>
+
+          <div class="acoes-resultado">
+            <span class="ultima-atualizacao" id="ultimaAtualizacao"></span>
+          </div>
         </section>
       </main>
 
@@ -698,7 +700,7 @@
           status.textContent = "Carregando…";
         } else {
           statusR.className = "status";
-          statusR.textContent = "Atualizando…";
+          statusR.textContent = ""; //"Atualizando…";
         }
 
         try {
