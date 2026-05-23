@@ -444,19 +444,37 @@
         return res.json();
       }
 
+      async function fetchAllPaginated(url) {
+        const rows = [];
+        let page = 1;
+        let pageCount = 1;
+
+        do {
+          const pageUrl = new URL(url);
+          pageUrl.searchParams.set("pagination[page]", String(page));
+
+          const json = await fetchJson(pageUrl.toString());
+          if (Array.isArray(json.data)) rows.push(...json.data);
+
+          const pagination = json.meta && json.meta.pagination;
+          pageCount = Number(pagination && pagination.pageCount) || page;
+          page += 1;
+        } while (page <= pageCount);
+
+        return rows;
+      }
+
       async function loadQuizzes(forceRefresh = false) {
         if (forceRefresh) cacheQuiz = null;
         if (cacheQuiz) return cacheQuiz;
-        const json = await fetchJson(API_QUIZZES);
-        cacheQuiz = Array.isArray(json.data) ? json.data : [];
+        cacheQuiz = await fetchAllPaginated(API_QUIZZES);
         return cacheQuiz;
       }
 
       async function loadRespostas(forceRefresh = false) {
         if (forceRefresh) cacheRespostas = null;
         if (cacheRespostas) return cacheRespostas;
-        const json = await fetchJson(API_RESPOSTAS);
-        const rows = Array.isArray(json.data) ? json.data : [];
+        const rows = await fetchAllPaginated(API_RESPOSTAS);
         cacheRespostas = rows.map((row) => {
           const a = row.attributes || {};
           return {
